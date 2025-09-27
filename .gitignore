@@ -1,3 +1,6 @@
+#passwords
+passwords.txt
+
 # Python bytecode
 __pycache__/
 *.py[cod]
