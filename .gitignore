@@ -1,6 +1,6 @@
-#passwords
+#passwords and design
 passwords.txt
-
+SCHEMA-DESIGN
 # Python bytecode
 __pycache__/
 *.py[cod]
