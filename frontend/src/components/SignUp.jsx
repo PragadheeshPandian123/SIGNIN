@@ -82,7 +82,7 @@ function SignUp() {
       <label>Role: </label>
       <select name="role" value={formData.role} onChange={handleChange} required>
         <option value="student">Student</option>
-        <option value="event_organizer">Event Organizer</option>
+        <option value="organizer">Event Organizer</option>
         <option value="admin">Admin</option>
       </select><br /><br />
 

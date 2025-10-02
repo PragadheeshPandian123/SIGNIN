@@ -15,10 +15,18 @@ function SignIn({ setRole }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reg_no, email, password }),
       });
+
       const data = await response.json();
 
       if (data.success) {
+        // ✅ Store user ID and role in localStorage
+        localStorage.setItem("userId", data.user_id);
+        localStorage.setItem("role", data.role);
+
+        // ✅ Set role in state (already used in App.jsx)
         setRole(data.role);
+
+        // ✅ Redirect to correct dashboard
         navigate(`/${data.role}-dashboard`);
       } else {
         setError(data.message);

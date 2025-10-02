@@ -5,15 +5,19 @@ from datetime import datetime
 from bson import ObjectId
 from models import User, Venue, Event
 from mongoengine import connect
+from routes.event_routes import event_bp
+from routes.venue_routes import venue_bp
 app = Flask(__name__)
-CORS(app)  # allow requests from frontend (React)
 
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 # Connect to MongoDB
 
 connect(
     db="college_event",
     host="mongodb://localhost:27017/college_event"
 )
+app.register_blueprint(event_bp)
+app.register_blueprint(venue_bp)
 def convert_year_to_int(year):
     if year=='1st year':
         return 1
@@ -91,7 +95,7 @@ def login():
 
     if check_password_hash(user.password , password):
         print(f"User Signed In \n Email: {user.email}")
-        return jsonify({"success": True, "role": user.role})
+        return jsonify({"success": True, "role": user.role , "user_id":str(user.id)})
     else:
         print(f"User Found but Invalid Password \n Email: {user}")
         return jsonify({"success": False, "message": "Invalid password"})
@@ -216,7 +220,7 @@ def get_user(user_id):
 # -------------------------
 if __name__ == "__main__":
     try:
-        app.run(debug=True)
+        app.run(host="localhost", port=5000, debug=True)
     except KeyboardInterrupt:
         print("\nServer stopped by user")
 

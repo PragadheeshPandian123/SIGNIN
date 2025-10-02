@@ -4,11 +4,9 @@ import { useState } from "react";
 import SignIn from "./components/SignIn/SignIn";
 import SignUp from "./components/SignUp";
 import AdminDashboard from "./components/AdminDashboard";
+import OrganizerDashboard from "./components/Organizer/OrganizerDashBoard";
 
 
-function OrganizerDashboard() {
-  return <h2>Welcome Organizer Dashboard</h2>;
-}
 function StudentDashboard() {
   return <h2>Welcome Student Dashboard</h2>;
 }
@@ -27,8 +25,8 @@ function App() {
         element={role === "admin" ? <AdminDashboard /> : <Navigate to="/" />}
       />
       <Route
-        path="/event_organizer-dashboard"
-        element={role === "event_organizer" ? <OrganizerDashboard /> : <Navigate to="/" />}
+        path="/organizer-dashboard/*"
+        element={role === "organizer" ? <OrganizerDashboard /> : <Navigate to="/" />}
       />
       <Route
         path="/student-dashboard"

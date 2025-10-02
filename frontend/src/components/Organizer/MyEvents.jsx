@@ -1,0 +1,95 @@
+// src/components/Organizer/MyEvents.jsx
+import { useEffect, useState } from "react";
+import "./MyEvents.css";
+
+const MyEvents = () => {
+  const [events, setEvents] = useState([]);
+  const organizerId = localStorage.getItem("userId"); // stored after login
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/api/events/organizer/${organizerId}`
+        );
+        const data = await res.json();
+        setEvents(data);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchEvents();
+  }, [organizerId]);
+
+  const handleDelete = async (eventId) => {
+    if (!window.confirm("Are you sure you want to delete this event?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/events/${eventId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setEvents(events.filter((e) => e.id !== eventId));
+      } else {
+        alert("Failed to delete event.");
+      }
+    } catch (error) {
+      console.log(error);
+      alert("Error deleting event");
+    }
+  };
+
+  return (
+    <div className="my-events-container">
+      <h2>My Events</h2>
+      {events.length === 0 ? (
+        <p>No events yet.</p>
+      ) : (
+        <div className="events-grid">
+          {events.map((event) => (
+            <div key={event.id} className="event-card">
+              {event.image_url && (
+                <img
+                  src={event.image_url}
+                  alt={event.title}
+                  className="event-image"
+                />
+              )}
+              <div className="event-details">
+                <h3>{event.title}</h3>
+                <p><strong>Date:</strong> {event.date}</p>
+                <p>
+                  <strong>Time:</strong> {event.start_time} - {event.end_time}
+                </p>
+                <p><strong>Venue:</strong> {event.venue}</p>
+                <p>{event.description}</p>
+              </div>
+              <div className="event-actions">
+                {event.gform_link && (
+                  <a
+                    href={event.gform_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn register-btn"
+                  >
+                    Register
+                  </a>
+                )}
+                <button className="btn edit-btn">Edit</button>
+                <button
+                  className="btn delete-btn"
+                  onClick={() => handleDelete(event.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MyEvents;
