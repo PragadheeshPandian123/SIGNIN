@@ -35,6 +35,7 @@ const OrganizerDashboard = () => {
           <Route path="/" element={<Navigate to="myevents" />} />
           <Route path="myevents" element={<MyEvents />} />
           <Route path="add-event" element={<AddEvents />} />
+          <Route path="add-event/:eventId" element={<AddEvents />} />
           <Route path="venues" element={<ViewVenues />} />
         </Routes>
       </div>

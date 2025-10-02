@@ -154,3 +154,31 @@ def delete_event(event_id):
         return jsonify({"error": "Event not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+# Get a single event by event ID
+@event_bp.route('/<event_id>', methods=['GET'])
+def get_event(event_id):
+    try:
+        event = Event.objects.get(id=event_id)
+        event_data = {
+            "id": str(event.id),
+            "title": event.title,
+            "description": event.description,
+            "category": event.category,
+            "venue": event.venue,
+            "venue_id": str(event.venue_id.id),
+            "date": event.date,
+            "start_time": event.start_time,
+            "end_time": event.end_time,
+            "max_participants": event.max_participants,
+            "registrations_count": event.registrations_count,
+            "status": event.status,
+            "gform_link": event.gform_link,
+            "gspreadsheet_link": event.gspreadsheet_link,
+            "image_url": event.image_url,
+            "phone_number": event.phone_number,
+            "mail_id": event.mail_id,
+        }
+        return jsonify({"success": True, "event": event_data}), 200
+    except DoesNotExist:
+        return jsonify({"success": False, "error": "Event not found"}), 404

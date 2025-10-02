@@ -1,10 +1,11 @@
-// src/components/Organizer/MyEvents.jsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./MyEvents.css";
 
 const MyEvents = () => {
   const [events, setEvents] = useState([]);
-  const organizerId = localStorage.getItem("userId"); // stored after login
+  const organizerId = localStorage.getItem("userId"); 
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -18,26 +19,25 @@ const MyEvents = () => {
         console.log(err);
       }
     };
-
     fetchEvents();
   }, [organizerId]);
 
   const handleDelete = async (eventId) => {
     if (!window.confirm("Are you sure you want to delete this event?")) return;
-
     try {
       const res = await fetch(`http://localhost:5000/api/events/${eventId}`, {
         method: "DELETE",
       });
-      if (res.ok) {
-        setEvents(events.filter((e) => e.id !== eventId));
-      } else {
-        alert("Failed to delete event.");
-      }
+      if (res.ok) setEvents(events.filter((e) => e.id !== eventId));
+      else alert("Failed to delete event.");
     } catch (error) {
       console.log(error);
       alert("Error deleting event");
     }
+  };
+
+  const handleEdit = (eventId) => {
+    navigate(`/organizer-dashboard/add-event/${eventId}`);
   };
 
   return (
@@ -59,9 +59,7 @@ const MyEvents = () => {
               <div className="event-details">
                 <h3>{event.title}</h3>
                 <p><strong>Date:</strong> {event.date}</p>
-                <p>
-                  <strong>Time:</strong> {event.start_time} - {event.end_time}
-                </p>
+                <p><strong>Time:</strong> {event.start_time} - {event.end_time}</p>
                 <p><strong>Venue:</strong> {event.venue}</p>
                 <p>{event.description}</p>
               </div>
@@ -76,7 +74,9 @@ const MyEvents = () => {
                     Register
                   </a>
                 )}
-                <button className="btn edit-btn">Edit</button>
+                <button className="btn edit-btn" onClick={() => handleEdit(event.id)}>
+                  Edit
+                </button>
                 <button
                   className="btn delete-btn"
                   onClick={() => handleDelete(event.id)}
