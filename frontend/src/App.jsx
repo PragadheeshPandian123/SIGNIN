@@ -1,7 +1,7 @@
 // App.jsx
 import {Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import SignIn from "./components/SignIn";
+import SignIn from "./components/SignIn/SignIn";
 import SignUp from "./components/SignUp";
 import AdminDashboard from "./components/AdminDashboard";
 
@@ -23,7 +23,7 @@ function App() {
       <Route path="/signup" element={<SignUp />} />
       {/* Role-based dashboards */}
       <Route
-        path="/admin-dashboard"
+        path="/admin-dashboard/*"
         element={role === "admin" ? <AdminDashboard /> : <Navigate to="/" />}
       />
       <Route

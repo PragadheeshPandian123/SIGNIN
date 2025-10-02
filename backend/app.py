@@ -1,18 +1,38 @@
 from flask import Flask, request, jsonify
-from pymongo import MongoClient
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_cors import CORS
 from datetime import datetime
-from bson.objectid import ObjectId
-
+from bson import ObjectId
+from models import User, Venue, Event
+from mongoengine import connect
 app = Flask(__name__)
 CORS(app)  # allow requests from frontend (React)
 
 # Connect to MongoDB
-client = MongoClient("mongodb://localhost:27017")
-db = client.college_event
-users_collection = db.users
 
+connect(
+    db="college_event",
+    host="mongodb://localhost:27017/college_event"
+)
+def convert_year_to_int(year):
+    if year=='1st year':
+        return 1
+    elif year=='2nd year':
+        return 2
+    elif year=='3rd year':
+        return 3
+    elif year=='4th year':
+        return 4
+
+def convert_int_to_year(year):
+    if year==1:
+        return "1st year"
+    elif year==2:
+        return "2nd year"
+    elif year==3:
+        return "3rd year"
+    elif year==4:
+        return "4th year"
 # -------------------------
 # Sign Up API
 # -------------------------
@@ -25,14 +45,13 @@ def signup():
     password = data.get("password")
     role = data.get("role")  # 'admin', 'organizer', 'student'
     department=data.get("department")
-    year=data.get("year")
-    created_at=datetime.utcnow()
+    year=convert_year_to_int(data.get("year"))
 
     if not reg_no or not name or not email or not password or not role or not department or not year:
         return jsonify({"success": False, "message": "All fields are required"})
 
     # Check if user already exists
-    if users_collection.find_one({"email": email}) or users_collection.find_one({"reg_no":reg_no}):
+    if User.objects(email=email).first() or User.objects(reg_no=reg_no).first():
 
         return jsonify({"success": False, "message": "User already exists"})
     # Hash the password
@@ -40,19 +59,18 @@ def signup():
 
     # Insert new user
 
-    new_user={
-        "reg_no":reg_no,
-        "name":name,
-        "email": email,
-        "password": hashed_password,
-        "role": role,
-        "department":department,
-        "year":year,
-        "created_at":created_at
-    }
-    users_collection.insert_one(new_user)
-    print(new_user)
+    user = User(
+    reg_no=reg_no,
+    name=name,
+    email=email,
+    password=hashed_password,
+    role=role,
+    department=department,
+    year=year
+    )
+    user.save()
 
+    print(user.to_json())
     return jsonify({"success": True, "message": "User registered successfully"})
 
 
@@ -66,14 +84,14 @@ def login():
     email = data.get("email")
     password = data.get("password")
 
-    user = users_collection.find_one({"email": email})
+    user = User.objects(email=email).first()
     if not user:
         print("User not found")
         return jsonify({"success": False, "message": "User not found"})
 
-    if check_password_hash(user["password"], password):
-        print(f"User Signed In \n Email: {user["email"]}")
-        return jsonify({"success": True, "role": user["role"]})
+    if check_password_hash(user.password , password):
+        print(f"User Signed In \n Email: {user.email}")
+        return jsonify({"success": True, "role": user.role})
     else:
         print(f"User Found but Invalid Password \n Email: {user}")
         return jsonify({"success": False, "message": "Invalid password"})
@@ -82,62 +100,57 @@ def login():
 #---------------------------
 # Show all users to admin
 #----------------------------
+# GET all users
 @app.route("/api/users", methods=["GET"])
 def get_users():
-    users = list(users_collection.find({}, {"password": 0}))  # exclude passwords
-    for u in users:
-        u["_id"] = str(u["_id"])  # ObjectId to string
-        u["created_at"] = u["created_at"].strftime("%Y-%m-%d %H:%M:%S")
-    return jsonify(users)
+    users = User.objects().exclude('password')  # exclude passwords
+    users_data = []
+    for user in users:
+        users_data.append({
+            "_id": str(user.id),
+            "reg_no": user.reg_no,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role,
+            "department": user.department,
+            "year": convert_int_to_year(user.year),
+            "created_at": user.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        })
+    return jsonify(users_data)
 
-
-# -------------------------------
-# Add new user (admin)
-# -------------------------------
+# POST: Add new user
 @app.route("/api/users", methods=["POST"])
 def add_user():
     data = request.json
-    reg_no=data.get("reg_no")
-    name=data.get("name")
+    reg_no = data.get("reg_no")
+    name = data.get("name")
     email = data.get("email")
     password = data.get("password")
-    role = data.get("role")  # 'admin', 'organizer', 'student'
-    department=data.get("department")
-    year=data.get("year")
-    created_at=datetime.utcnow()
+    role = data.get("role")
+    department = data.get("department")
+    year = convert_year_to_int(data.get("year"))
 
     if not reg_no or not name or not email or not password or not role or not department or not year:
         return jsonify({"success": False, "message": "All fields are required"})
 
-    # Check if user already exists
-    if users_collection.find_one({"email": email}) or users_collection.find_one({"reg_no":reg_no}):
+    if User.objects(email=email).first() or User.objects(reg_no=reg_no).first():
+        return jsonify({"success": False, "message": "User already exists"})
 
-        return jsonify({"success": False, "message": "Admin User already exists"})
-    # Hash the password
-    hashed_password = generate_password_hash(password)
+    user = User(
+        reg_no=reg_no,
+        name=name,
+        email=email,
+        password=generate_password_hash(password),
+        role=role,
+        department=department,
+        year=year
+    )
+    user.save()
+    return jsonify({"success": True, "message": "User added successfully"})
 
-    # Insert new user
-
-    new_user={
-        "reg_no":reg_no,
-        "name":name,
-        "email": email,
-        "password": hashed_password,
-        "role": role,
-        "department":department,
-        "year":year,
-        "created_at":created_at
-    }
-    users_collection.insert_one(new_user)
-    print(new_user)
-
-    return jsonify({"success": True, "message": "Admin User Added successfully"})
-
-# -------------------------------
-# Edit existing user (admin)
-# -------------------------------
-
+# PUT: Edit user (with optional trailing slash)
 @app.route("/api/users/<user_id>", methods=["PUT"])
+@app.route("/api/users/<user_id>/", methods=["PUT"])
 def edit_user(user_id):
     data = request.json
     update_data = {
@@ -146,28 +159,57 @@ def edit_user(user_id):
         "email": data.get("email"),
         "role": data.get("role"),
         "department": data.get("department"),
-        "year": data.get("year")
+        "year": convert_year_to_int(data.get("year"))
     }
 
-    # Optionally update password if provided
     if data.get("password"):
         update_data["password"] = generate_password_hash(data["password"])
 
-    result = users_collection.update_one({"_id": ObjectId(user_id)}, {"$set": update_data})
-    if result.modified_count:
-        return jsonify({"success": True, "message": "User updated successfully"})
-    return jsonify({"success": False, "message": "No changes made"})
+    try:
+        user = User.objects.get(id=ObjectId(user_id))
+    except Exception:
+        return jsonify({"success": False, "message": "User not found"})
 
-# -------------------------------
-# Delete a user (admin)
-# -------------------------------
+    for key, value in update_data.items():
+        if value is not None:
+            setattr(user, key, value)
 
+    user.save()
+    return jsonify({"success": True, "message": "User updated successfully"})
+
+# DELETE: Delete user (with optional trailing slash)
 @app.route("/api/users/<user_id>", methods=["DELETE"])
+@app.route("/api/users/<user_id>/", methods=["DELETE"])
 def delete_user(user_id):
-    result = users_collection.delete_one({"_id": ObjectId(user_id)})
-    if result.deleted_count:
-        return jsonify({"success": True})
-    return jsonify({"success": False, "message": "User not found"})
+    try:
+        user = User.objects.get(id=ObjectId(user_id))
+    except Exception:
+        return jsonify({"success": False, "message": "User not found"})
+
+    user.delete()
+    return jsonify({"success": True, "message": "User deleted successfully"})
+
+# GET single user
+@app.route("/api/users/<user_id>", methods=["GET"])
+@app.route("/api/users/<user_id>/", methods=["GET"])
+def get_user(user_id):
+    try:
+        user = User.objects.get(id=ObjectId(user_id))
+    except Exception:
+        return jsonify({"success": False, "message": "User not found"}), 404
+
+    user_data = {
+        "_id": str(user.id),
+        "reg_no": user.reg_no,
+        "name": user.name,
+        "email": user.email,
+        "role": user.role,
+        "department": user.department,
+        "year": convert_int_to_year(user.year),
+        "created_at": user.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    }
+    return jsonify(user_data)
+
 
 # -------------------------
 # Run the server
@@ -175,6 +217,6 @@ def delete_user(user_id):
 if __name__ == "__main__":
     try:
         app.run(debug=True)
-    except:
+    except KeyboardInterrupt:
         print("\nServer stopped by user")
 

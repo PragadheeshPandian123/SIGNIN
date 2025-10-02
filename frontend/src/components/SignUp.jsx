@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-
+import "./SignUp.css";
 function SignUp() {
   const [formData, setFormData] = useState({
     reg_no:"",
@@ -40,7 +40,7 @@ function SignUp() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
+    <div className="signup-container">
       <h2>Sign Up</h2>
 
 
